@@ -1,0 +1,32 @@
+llm:
+  default_model: "codellama:7b"
+  models:
+    coding: "codellama:7b"
+    general: "llama3:8b"
+    vision: "llava:7b"
+  
+  generation_params:
+    temperature: 0.7
+    top_p: 0.9
+    top_k: 40
+    max_tokens: 2048
+    
+  ollama:
+    host: "http://localhost:11434"
+    timeout: 120
+
+user:
+  name: "aizen_affu"
+  preferences:
+    coding_style: "pythonic"
+    response_style: "concise"
+
+memory:
+  max_history_length: 10
+  context_window: 4096
+
+paths:
+  data_dir: "./data"
+  knowledge_dir: "./data/knowledge"
+  cache_dir: "./data/cache"
+  memory_db: "./data/memory.db"
