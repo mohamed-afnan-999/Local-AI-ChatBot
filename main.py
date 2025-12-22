@@ -19,13 +19,26 @@ from dotenv import load_dotenv
 from os import getenv
 from ollama import Client
 import os
-
+import requests
 
 def configure():
     load_dotenv()
 
 def select_model():
-    ...
+    ollama_cloud = 'https://ollama.com/api/tags'
+    response = requests.get(ollama_cloud)
+    selected_model = "deepseek-v3.1:671b-cloud"
+
+    if response.status_code == 200:
+        cloud_models = response.json().get("models", [])
+        print("Select one of the following models to run remotely")
+        for i, model in enumerate(cloud_models):
+            print(f"{i+1}. {model["name"]}")
+        selected_model = input()
+    else:
+        print("Failed to fetch cloud models.")
+
+    return selected_model
 
 def main():
     configure()
@@ -46,14 +59,17 @@ def main():
         }
     ]
 
-    for part in client.chat('deepseek-v3.1:671b-cloud', messages= messages, stream = True):
+    model: str = select_model()
+    print(f"Model currently in use is {model}.")
+
+    for part in client.chat(model, messages= messages, stream = True):
         print(f"{part['message']['content']}", end="", flush=True)
 
     user_input = input("\nPrompt: ")
     while user_input not in exit_prompts or user_input is not None:
 
         messages[0]['content'] = user_input
-        conversation = client.chat('deepseek-v3.1:671b-cloud', messages= messages, stream = True)
+        conversation = client.chat(model, messages= messages, stream = True)
         for part in conversation:
             every_word = part
             print(f"{every_word['message']['content']}", end="", flush= True)
