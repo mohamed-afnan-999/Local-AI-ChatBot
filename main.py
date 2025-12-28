@@ -55,7 +55,7 @@ def switch_model(running_model):
 
     '''extracting the list of available cloud models'''
     c: int = 0
-    for i, model in cloud_models:
+    for i, model in enumerate(cloud_models):
         if model == running_model:
             cloud_models.pop(i-1)
             continue
@@ -68,6 +68,18 @@ def switch_model(running_model):
     selected_model: int = int(input("\nEnter model number: "))
 
     return cloud_models[selected_model-1]
+
+def stream_response(model, messages, want_to_stream):
+    client = Client(host = 'https://ollama.com', headers = {'Authorisation': 'Bearer ' + getenv('OLLAMA_API_KEY')})
+
+    if want_to_stream.lower() in ['t', 'true', 'yes', 'y']:
+        '''if response is needed to be streamed, it will be broken down token by token, word by word, hence need a for loop to capture each token/word generated'''
+        for part in client.chat(model= model, messages= messages, stream= True):
+            print(f"{part['message']['content']}", end="", flush= True)
+    else:
+        '''if no streaming is required, response is generated in one go, hence cannot use a for loop to capture the generated response'''
+        response = client.chat(model= model, messages= messages, stream= False)
+        print(f"{response['message']['content']}")
 
 def main():
     configure()
@@ -91,8 +103,8 @@ def main():
     print(f"Model currently in use is {model}.")
     print(f"\nType 'exit' or '/bye' to quit session.\nType 'switch' keyword to change running model.\n")
 
-    for part in client.chat(model, messages= messages, stream = True):
-        print(f"{part['message']['content']}", end="", flush=True)
+    want_to_stream = input("Do you want a streamed response to your queries? (True/False)\n")
+    stream_response(model, messages, want_to_stream)
 
     user_input = input("\nPrompt: ")
     while user_input is not None:
@@ -100,20 +112,18 @@ def main():
         if "switch" in user_input:  # changing model
             model = switch_model(model)
             print(f"New model selected: {model}")
-            user_input = input("Prompt: ")
+            user_input = input("\nPrompt: ")
             continue
 
         messages[0]['content'] = user_input
-        conversation = client.chat(model, messages= messages, stream = True)
-        for every_word in conversation:
-            print(f"{every_word['message']['content']}", end="", flush= True)
+        stream_response(model, messages, want_to_stream)
         print()
 
         for exit_prompt in exit_prompts:
             if exit_prompt in user_input:
                 return
 
-        user_input = input("Prompt: ").lower()
+        user_input = input("\nPrompt: ").lower()
 
 if __name__ == "__main__":
     main()
